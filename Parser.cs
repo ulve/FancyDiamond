@@ -1,4 +1,4 @@
-﻿using FancyDiamond.DTO;
+using FancyDiamond.DTO;
 using Sprache;
 using System;
 using System.Collections.Generic;
@@ -30,8 +30,11 @@ namespace FancyDiamond
                                                                    .Except(ImplicitParticipantEnd)
                                                                    .Many()
                                                                    .Text()
-                                                                   .Select(n => new Participant { Name = n.Trim(), Type = "Implicit" });
-
+                                                                   .Select(n => new Participant 
+                                                                    { 
+                                                                       Name = n.Trim(), 
+                                                                       Type = "Implicit" 
+                                                                    });
 
         static readonly Parser<string> descriptionStart = Parse.String(":").Text();
 
@@ -40,7 +43,7 @@ namespace FancyDiamond
                                                      from desc in Parse.CharExcept(Environment.NewLine).Many().Text()
                                                      from e in NewLine
                                                      select desc;
-        
+
         static Parser<ParticipantOrLine> CreateActorParser(string actorName)
         {
             return from a in Parse.String(actorName).Text()
@@ -55,7 +58,16 @@ namespace FancyDiamond
                                                                  from l in LineType
                                                                  from p2 in ImplicitParticipant
                                                                  from d in Parse.Optional(Description)
-                                                                 select new ParticipantOrLine { Line = new Line { From = p1, To = p2, Format = l, Description = d.GetOrDefault() } };
+                                                                 select new ParticipantOrLine
+                                                                 { 
+                                                                    Line = new Line 
+                                                                    { 
+                                                                        From = p1, 
+                                                                        To = p2, 
+                                                                        Format = l, 
+                                                                        Description = d.GetOrDefault() 
+                                                                    }
+                                                                 };
 
         static readonly Parser<ParticipantOrLine> LineParser = CreateActorParser("actor").Or(ImplicitLine);
 
@@ -69,15 +81,16 @@ namespace FancyDiamond
                                                                         from e in End
                                                                         select l.ToList();
 
-
-
         public static Diagram ParseDiagram(string text)
         {
             var d = DiagramParser.Parse(text);
-            var participants = d.SelectMany(l => l.Participant != null ? new List<Participant>() { l.Participant } : new List<Participant>() { l.Line.From, l.Line.To })
-                .GroupBy(p => p.Name)
-                .Select(p => p.First());            
-                
+
+            var participants = d.SelectMany(l => l.Participant != null // Get all parsed participants 
+                    ? new List<Participant>() { l.Participant } 
+                    : new List<Participant>() { l.Line.From, l.Line.To })
+                .GroupBy(p => p.Name) // Remove duplicates
+                .Select(p => p.First());
+
             var lines = d.Where(l => l.Line != null).Select(l => l.Line);
 
             return new Diagram
@@ -85,7 +98,7 @@ namespace FancyDiamond
                 Name = "text",
                 Participants = participants.ToList(),
                 Lines = lines.ToList()
-            };                
+            };
         }
     }
 }

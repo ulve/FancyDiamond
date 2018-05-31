@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace FancyDiamond
 {    
@@ -17,16 +17,8 @@ Alice <-- Bob: another authentication Response
 
         static void Main(string[] args)
         {
-            //  var a = @"Alice -> Bob: Katthår";
-            //var l = DiamondParsers.DiagramParser.Parse(testStr);
+            Console.WriteLine("Parsar diagram");
             var l = DiamondParsers.ParseDiagram(testStr);
-            //var a = DiagramParser.Parse(testStr);
-
-            //Console.WriteLine(a.Name);
-            //foreach(var l in a.Lines)
-            //{
-            //    Console.WriteLine($"{l.From.Name} {l.Format} {l.To.Name}: {l.Description}");
-            //}
             Console.ReadKey();
         }
     }
