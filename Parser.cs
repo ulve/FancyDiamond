@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace FancyDiamond
 {
-    public static class DiamondParsers
+    public class DiamondParsers
     {
         static readonly Parser<string> NewLine = Parse.String(Environment.NewLine).Text();
 
@@ -30,11 +30,11 @@ namespace FancyDiamond
                                                                    .Except(ImplicitParticipantEnd)
                                                                    .Many()
                                                                    .Text()
-                                                                   .Select(n => new Participant 
-                                                                    { 
-                                                                       Name = n.Trim(), 
-                                                                       Type = "Implicit" 
-                                                                    });
+                                                                   .Select(n => new Participant
+                                                                   {
+                                                                       Name = n.Trim(),
+                                                                       Type = "Implicit"
+                                                                   });
 
         static readonly Parser<string> descriptionStart = Parse.String(":").Text();
 
@@ -52,24 +52,49 @@ namespace FancyDiamond
                    from e in NewLine
                    select new ParticipantOrLine { Participant = new Participant { Name = name, Type = a } };
         }
-        // Line
 
+        // Line
         static readonly Parser<ParticipantOrLine> ImplicitLine = from p1 in ImplicitParticipant
                                                                  from l in LineType
                                                                  from p2 in ImplicitParticipant
                                                                  from d in Parse.Optional(Description)
                                                                  select new ParticipantOrLine
-                                                                 { 
-                                                                    Line = new Line 
-                                                                    { 
-                                                                        From = p1, 
-                                                                        To = p2, 
-                                                                        Format = l, 
-                                                                        Description = d.GetOrDefault() 
-                                                                    }
+                                                                 {
+                                                                     Line = new Line
+                                                                     {
+                                                                         From = p1,
+                                                                         To = p2,
+                                                                         Format = l,
+                                                                         Description = d.GetOrDefault()
+                                                                     }
                                                                  };
 
         static readonly Parser<ParticipantOrLine> LineParser = CreateActorParser("actor").Or(ImplicitLine);
+
+        // Containers
+        static readonly Parser<Loop> LoopParser = from loop in Parse.String("loop")
+                                                  from whitespace in Parse.WhiteSpace.Many()
+                                                  from desc in Parse.CharExcept(Environment.NewLine).Many().Text()
+                                                  from b in NewLine
+                                                  from items in ItemParser.Many()
+                                                  from end in Parse.String("end")
+                                                  from q in NewLine
+                                                  select new Loop { Description = desc, Items = items.ToList() };
+
+        static readonly Parser<Item> ContainerParser = LoopParser;
+
+        static readonly Parser<Item> SuperLineParser = from p1 in ImplicitParticipant
+                                                       from l in LineType
+                                                       from p2 in ImplicitParticipant
+                                                       from d in Parse.Optional(Description)
+                                                       select new SuperLine
+                                                       {
+                                                           From = p1,
+                                                           To = p2,
+                                                           Format = l,
+                                                           Description = d.GetOrDefault()
+                                                       };
+        static readonly Parser<Item> ItemParser = ContainerParser.XOr(SuperLineParser);
 
         // Diagram
         static readonly Parser<string> Start = Parse.String("@startuml" + Environment.NewLine).Text();
@@ -81,12 +106,20 @@ namespace FancyDiamond
                                                                         from e in End
                                                                         select l.ToList();
 
+
+        public static List<Item> NextGenParser(string text)
+        {
+            var l = ItemParser.Many().Parse(text);
+
+            return l.ToList();
+        }
+
         public static Diagram ParseDiagram(string text)
         {
             var d = DiagramParser.Parse(text);
 
             var participants = d.SelectMany(l => l.Participant != null // Get all parsed participants 
-                    ? new List<Participant>() { l.Participant } 
+                    ? new List<Participant>() { l.Participant }
                     : new List<Participant>() { l.Line.From, l.Line.To })
                 .GroupBy(p => p.Name) // Remove duplicates
                 .Select(p => p.First());

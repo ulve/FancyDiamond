@@ -28,7 +28,6 @@ namespace FancyDiamond.DTO
         public Participant To { get; set; }
     }
 
-
     public class Diagram
     {
         public List<Participant> Participants { get; set; }
@@ -36,5 +35,37 @@ namespace FancyDiamond.DTO
         public string Name { get; set; }
 
         public List<Line> Lines { get; set; }
+    }
+
+    public class Item
+    {
+        public string Description { get; set; }
+    }
+
+    public class ContainerItem : Item 
+    {
+        public List<Item> Items { get; set; }        
+
+    }
+
+    public class SuperLine : Item
+    {
+        public Participant From { get; set; }
+        public Participant To { get; set; }
+        public string LineType { get; set; }
+        public string Format { get; set; }
+    }
+
+    public class Loop : ContainerItem
+    {
+    }
+
+    public class Alt : ContainerItem
+    {
+        public Alt Next { get; set; }
+    }
+
+    public class Group : ContainerItem
+    {
     }
 }
